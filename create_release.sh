@@ -165,7 +165,7 @@ create_release_package() {
 
             # 复制 Windows 所需的 DLL 文件（如果存在）
             echo "📋 复制 Windows DLL 文件..."
-            if [[ -d "/usr/x86_64-w64-mingw32/bin" ]]; then
+            if [[ "$PLATFORM" == "windows" ]]; then
                 # 常见的 SDL2 DLL 文件
                 local dll_files=(
                     "SDL2.dll"
@@ -177,19 +177,46 @@ create_release_package() {
                     "libstdc++-6.dll"
                     "libwinpthread-1.dll"
                 )
+
+                # 可能的DLL搜索路径
+                local search_paths=(
+                    "/usr/x86_64-w64-mingw32/bin"
+                    "/mingw64/bin"
+                    "/usr/bin"
+                    "/usr/local/bin"
+                )
+
                 for dll in "${dll_files[@]}"; do
-                    if [[ -f "/usr/x86_64-w64-mingw32/bin/$dll" ]]; then
-                        cp "/usr/x86_64-w64-mingw32/bin/$dll" "$release_dir/" 2>/dev/null || true
+                    local found=false
+                    for path in "${search_paths[@]}"; do
+                        if [[ -f "$path/$dll" ]]; then
+                            echo "找到 $dll 在 $path/"
+                            cp "$path/$dll" "$release_dir/" 2>/dev/null && found=true && break
+                        fi
+                    done
+                    if [[ "$found" != true ]]; then
+                        echo "警告: 未找到 $dll (已跳过)"
                     fi
                 done
             fi
 
             echo "📦 创建 Windows 发布包..."
             cd "$release_dir"
+            # 显示发布包内容
+            echo "📋 发布包内容:"
+            ls -la
+
             # 在MSYS2环境中使用tar替代zip
             tar -czf "../${project}_windows_${timestamp}.tar.gz" *
             cd ..
             echo "✅ Windows 发布包创建完成: ${project}_windows_${timestamp}.tar.gz"
+
+            # 检查发布包是否包含可执行文件
+            if tar -tzf "${project}_windows_${timestamp}.tar.gz" | grep -q "\.exe$"; then
+                echo "✅ 发布包包含可执行文件"
+            else
+                echo "⚠️  警告: 发布包中未找到可执行文件"
+            fi
             ;;
 
         "type_tag-linux")
@@ -234,10 +261,21 @@ create_release_package() {
 
             echo "📦 创建 Windows 发布包..."
             cd "$release_dir"
+            # 显示发布包内容
+            echo "📋 发布包内容:"
+            ls -la
+
             # 在MSYS2环境中使用tar替代zip
             tar -czf "../${project}_windows_${timestamp}.tar.gz" *
             cd ..
             echo "✅ Windows 发布包创建完成: ${project}_windows_${timestamp}.tar.gz"
+
+            # 检查发布包是否包含可执行文件
+            if tar -tzf "${project}_windows_${timestamp}.tar.gz" | grep -q "\.exe$"; then
+                echo "✅ 发布包包含可执行文件"
+            else
+                echo "⚠️  警告: 发布包中未找到可执行文件"
+            fi
             ;;
 
         "slime_survivor-linux")
@@ -278,10 +316,21 @@ create_release_package() {
 
             echo "📦 创建 Windows 发布包..."
             cd "$release_dir"
+            # 显示发布包内容
+            echo "📋 发布包内容:"
+            ls -la
+
             # 在MSYS2环境中使用tar替代zip
             tar -czf "../${project}_windows_${timestamp}.tar.gz" *
             cd ..
             echo "✅ Windows 发布包创建完成: ${project}_windows_${timestamp}.tar.gz"
+
+            # 检查发布包是否包含可执行文件
+            if tar -tzf "${project}_windows_${timestamp}.tar.gz" | grep -q "\.exe$"; then
+                echo "✅ 发布包包含可执行文件"
+            else
+                echo "⚠️  警告: 发布包中未找到可执行文件"
+            fi
             ;;
 
         "tictactoe-linux")

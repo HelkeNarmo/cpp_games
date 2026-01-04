@@ -111,13 +111,37 @@ build_type_tag_windows() {
     fi
 
     echo "🪟 编译 Type Tag (Windows)..."
-    x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
+    # MSYS2环境中SDL2通常是静态库，尝试静态链接
+    if pkg-config --exists sdl2 SDL2_image SDL2_ttf SDL2_mixer SDL2_net 2>/dev/null; then
+        echo "使用 pkg-config 配置 SDL2 库..."
+        SDL_FLAGS="$(pkg-config --cflags --libs sdl2 SDL2_image SDL2_ttf SDL2_mixer SDL2_net)"
+    else
+        echo "pkg-config 不可用，使用手动配置..."
+        SDL_FLAGS="-I/usr/x86_64-w64-mingw32/include -I/mingw64/include -L/usr/x86_64-w64-mingw32/lib -L/mingw64/lib"
+    fi
+
+    # 尝试静态链接SDL2库，如果失败则使用动态链接
+    echo "尝试静态链接SDL2库..."
+    if x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
         -static-libgcc -static-libstdc++ \
-        $(pkg-config --cflags --libs sdl2 SDL2_image SDL2_ttf SDL2_mixer SDL2_net 2>/dev/null || echo "-I/usr/x86_64-w64-mingw32/include -L/usr/x86_64-w64-mingw32/lib") \
+        $SDL_FLAGS \
         -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lSDL2_net \
         -lws2_32 -lwinmm -lole32 -luuid -lsetupapi -limm32 -lversion \
+        -static \
         -mwindows \
-        -o type_tag.exe
+        -o type_tag.exe 2>/dev/null; then
+        echo "✅ 静态链接成功"
+    else
+        echo "⚠️  静态链接失败，尝试动态链接..."
+        x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
+            -static-libgcc -static-libstdc++ \
+            $SDL_FLAGS \
+            -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lSDL2_net \
+            -lws2_32 -lwinmm -lole32 -luuid -lsetupapi -limm32 -lversion \
+            -mwindows \
+            -o type_tag.exe
+        echo "✅ 动态链接完成"
+    fi
 
     echo "Windows 可执行文件已生成: type_tag/type_tag.exe"
 }
@@ -187,13 +211,34 @@ build_slime_survivor_windows() {
     fi
 
     echo "🪟 编译 Slime Survivor (Windows)..."
-    x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
+    # MSYS2环境中SDL2通常是静态库，尝试静态链接
+    if pkg-config --exists sdl2 SDL2_image SDL2_ttf SDL2_mixer 2>/dev/null; then
+        SDL_FLAGS="$(pkg-config --cflags --libs sdl2 SDL2_image SDL2_ttf SDL2_mixer)"
+    else
+        SDL_FLAGS="-I/usr/x86_64-w64-mingw32/include -I/mingw64/include -L/usr/x86_64-w64-mingw32/lib -L/mingw64/lib"
+    fi
+
+    # 尝试静态链接SDL2库，如果失败则使用动态链接
+    if x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
         -static-libgcc -static-libstdc++ \
-        $(pkg-config --cflags --libs sdl2 SDL2_image SDL2_ttf SDL2_mixer 2>/dev/null || echo "-I/usr/x86_64-w64-mingw32/include -L/usr/x86_64-w64-mingw32/lib") \
+        $SDL_FLAGS \
         -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer \
         -lws2_32 -lwinmm -lole32 -luuid -lsetupapi -limm32 -lversion \
+        -static \
         -mwindows \
-        -o slime_survivor.exe
+        -o slime_survivor.exe 2>/dev/null; then
+        echo "✅ 静态链接成功"
+    else
+        echo "⚠️  静态链接失败，尝试动态链接..."
+        x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
+            -static-libgcc -static-libstdc++ \
+            $SDL_FLAGS \
+            -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer \
+            -lws2_32 -lwinmm -lole32 -luuid -lsetupapi -limm32 -lversion \
+            -mwindows \
+            -o slime_survivor.exe
+        echo "✅ 动态链接完成"
+    fi
 
     echo "Windows 可执行文件已生成: slime_survivor/src/slime_survivor.exe"
 }
@@ -263,12 +308,32 @@ build_tictactoe_windows() {
     fi
 
     echo "🪟 编译 Tic Tac Toe (Windows)..."
-    x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
+    # MSYS2环境中SDL2通常是静态库，尝试静态链接
+    if pkg-config --exists sdl2 SDL2_gfx 2>/dev/null; then
+        SDL_FLAGS="$(pkg-config --cflags --libs sdl2 SDL2_gfx)"
+    else
+        SDL_FLAGS="-I/usr/x86_64-w64-mingw32/include -I/mingw64/include -L/usr/x86_64-w64-mingw32/lib -L/mingw64/lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_gfx"
+    fi
+
+    # 尝试静态链接SDL2库，如果失败则使用动态链接
+    if x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
         -static-libgcc -static-libstdc++ \
-        $(pkg-config --cflags --libs sdl2 SDL2_gfx 2>/dev/null || echo "-I/usr/x86_64-w64-mingw32/include -L/usr/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_gfx") \
+        $SDL_FLAGS \
         -lws2_32 -lwinmm -lole32 -luuid -lsetupapi -limm32 -lversion \
+        -static \
         -mwindows \
-        -o tictactoe.exe
+        -o tictactoe.exe 2>/dev/null; then
+        echo "✅ 静态链接成功"
+    else
+        echo "⚠️  静态链接失败，尝试动态链接..."
+        x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
+            -static-libgcc -static-libstdc++ \
+            $SDL_FLAGS \
+            -lws2_32 -lwinmm -lole32 -luuid -lsetupapi -limm32 -lversion \
+            -mwindows \
+            -o tictactoe.exe
+        echo "✅ 动态链接完成"
+    fi
 
     echo "Windows 可执行文件已生成: tictactoe/tictactoe.exe"
 }
