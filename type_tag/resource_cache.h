@@ -6,6 +6,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <cstdint>
+#include <functional>
 using namespace std;
 
 static inline void hash_combine(std::size_t& seed, std::size_t v) {
