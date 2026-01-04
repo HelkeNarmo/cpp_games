@@ -43,7 +43,15 @@ jobs:
 
         # 获取变更的文件列表
         if [[ "${{ github.event_name }}" == "push" ]]; then
-          CHANGED_FILES=$(git diff --name-only HEAD~1)
+          # 检查是否是第一次推送
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          if [[ $COMMIT_COUNT -eq 1 ]]; then
+            # 第一次推送，构建所有项目
+            echo "🎯 第一次推送，构建所有项目"
+            CHANGED_FILES="type_tag/ slime_survivor/ tictactoe/"
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD~1)
+          fi
         elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
           CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }})
         else
