@@ -3,191 +3,52 @@ name: Build Games
 on:
   push:
     branches: [ main, master ]
-    paths:
-      - '**/*.cpp'
-      - '**/*.h'
-      - '**/*.hpp'
-      - '**/img/**'
-      - '**/font/**'
-      - '**/aud/**'
-      - '.github/workflows/build-games.yml'
   pull_request:
     branches: [ main, master ]
-    paths:
-      - '**/*.cpp'
-      - '**/*.h'
-      - '**/*.hpp'
-      - '**/img/**'
-      - '**/font/**'
-      - '**/aud/**'
-      - '.github/workflows/build-games.yml'
   workflow_dispatch:
 
 jobs:
-  detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      build_type_tag: ${{ steps.filter.outputs.build_type_tag }}
-      build_slime_survivor: ${{ steps.filter.outputs.build_slime_survivor }}
-      build_tictactoe: ${{ steps.filter.outputs.build_tictactoe }}
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 2
-
-    - name: Check for file changes
-      id: filter
-      run: |
-        # 检查哪些项目有文件变更
-        echo "检查文件变更..."
-
-        # 获取变更的文件列表
-        if [[ "${{ github.event_name }}" == "push" ]]; then
-          # 检查是否是第一次推送
-          COMMIT_COUNT=$(git rev-list --count HEAD)
-          if [[ $COMMIT_COUNT -eq 1 ]]; then
-            # 第一次推送，构建所有项目
-            echo "🎯 第一次推送，构建所有项目"
-            CHANGED_FILES="type_tag/ slime_survivor/ tictactoe/"
-          else
-            CHANGED_FILES=$(git diff --name-only HEAD~1)
-          fi
-        elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }})
-        else
-          # workflow_dispatch - 检查所有项目
-          CHANGED_FILES="type_tag/ slime_survivor/ tictactoe/"
-        fi
-
-        echo "变更的文件:"
-        echo "$CHANGED_FILES"
-
-        # 检查每个项目是否有变更
-        check_project() {
-          local project=$1
-          if echo "$CHANGED_FILES" | grep -q "^$project/"; then
-            echo "true"
-          else
-            echo "false"
-          fi
-        }
-
-        echo "build_type_tag=$(check_project type_tag)" >> $GITHUB_OUTPUT
-        echo "build_slime_survivor=$(check_project slime_survivor)" >> $GITHUB_OUTPUT
-        echo "build_tictactoe=$(check_project tictactoe)" >> $GITHUB_OUTPUT
-
-        echo "检测结果:"
-        echo "  type_tag: $(check_project type_tag)"
-        echo "  slime_survivor: $(check_project slime_survivor)"
-        echo "  tictactoe: $(check_project tictactoe)"
-
   build-macos:
-    needs: detect-changes
     runs-on: macos-latest
     strategy:
       matrix:
         project: [type_tag, slime_survivor, tictactoe]
     steps:
-    - name: Check if ${{ matrix.project }} needs building
-      id: check
-      run: |
-        # Map project names to output variables
-        case "${{ matrix.project }}" in
-          "type_tag")
-            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_type_tag }}"
-            ;;
-          "slime_survivor")
-            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_slime_survivor }}"
-            ;;
-          "tictactoe")
-            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_tictactoe }}"
-            ;;
-        esac
-
-        if [[ "$SHOULD_BUILD" == "true" ]]; then
-          echo "should_build=true" >> $GITHUB_OUTPUT
-          echo "🎯 ${{ matrix.project }} 有变更，需要构建"
-        else
-          echo "should_build=false" >> $GITHUB_OUTPUT
-          echo "⏭️ ${{ matrix.project }} 无变更，跳过构建"
-        fi
-      shell: bash
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Install SDL2 dependencies
-      if: steps.check.outputs.should_build == 'true'
       run: |
         brew update
         brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer sdl2_net pkg-config
 
     - name: Build ${{ matrix.project }} for macOS
-      if: steps.check.outputs.should_build == 'true'
       run: |
-        echo "Starting build for ${{ matrix.project }} on macOS"
-        pwd
-        ls -la
+        echo "🔨 Building ${{ matrix.project }} for macOS..."
         ./build_cross_platform.sh ${{ matrix.project }}
-        echo "Build completed, checking for executable..."
-        ls -la ${{ matrix.project }}/${{ matrix.project }}_macos 2>/dev/null || echo "Executable not found!"
 
     - name: Create ${{ matrix.project }} macOS release package
-      if: steps.check.outputs.should_build == 'true'
       run: |
+        echo "📦 Creating release package for ${{ matrix.project }}..."
         ./create_release.sh ${{ matrix.project }}
 
-    - name: List files before upload (macOS)
-      if: steps.check.outputs.should_build == 'true'
-      run: |
-        echo "Current directory files:"
-        ls -la
-        echo "Looking for pattern: ${{ matrix.project }}_macos_*.tar.gz"
-        ls -la ${{ matrix.project }}_macos_*.tar.gz 2>/dev/null || echo "No files found matching pattern"
-
     - name: Upload ${{ matrix.project }} macOS artifact
-      if: steps.check.outputs.should_build == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.project }}-macos
         path: ${{ matrix.project }}_macos_*.tar.gz
-        if-no-files-found: warn
+        if-no-files-found: error
 
   build-windows:
-    needs: detect-changes
     runs-on: windows-latest
     strategy:
       matrix:
         project: [type_tag, slime_survivor, tictactoe]
     steps:
-    - name: Check if ${{ matrix.project }} needs building
-      id: check
-      run: |
-        # Map project names to output variables
-        case "${{ matrix.project }}" in
-          "type_tag")
-            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_type_tag }}"
-            ;;
-          "slime_survivor")
-            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_slime_survivor }}"
-            ;;
-          "tictactoe")
-            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_tictactoe }}"
-            ;;
-        esac
-
-        if [[ "$SHOULD_BUILD" == "true" ]]; then
-          echo "should_build=true" >> $GITHUB_OUTPUT
-          echo "🎯 ${{ matrix.project }} 有变更，需要构建"
-        else
-          echo "should_build=false" >> $GITHUB_OUTPUT
-          echo "⏭️ ${{ matrix.project }} 无变更，跳过构建"
-        fi
-      shell: bash
-
     - name: Checkout code
-      if: steps.check.outputs.should_build == 'true'
       uses: actions/checkout@v4
 
     - name: Setup MSYS2
-      if: steps.check.outputs.should_build == 'true'
       uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
@@ -204,81 +65,34 @@ jobs:
           mingw-w64-x86_64-pkg-config
 
     - name: Build ${{ matrix.project }} for Windows
-      if: steps.check.outputs.should_build == 'true'
       shell: msys2 {0}
       run: |
-        echo "Starting build for ${{ matrix.project }} on Windows"
-        pwd
-        ls -la
+        echo "🔨 Building ${{ matrix.project }} for Windows..."
         ./build_cross_platform.sh ${{ matrix.project }}
-        echo "Build completed, checking for executable..."
-        if [[ "${{ matrix.project }}" == "slime_survivor" ]]; then
-          ls -la ${{ matrix.project }}/src/${{ matrix.project }}.exe 2>/dev/null || echo "Executable not found!"
-        else
-          ls -la ${{ matrix.project }}/${{ matrix.project }}.exe 2>/dev/null || echo "Executable not found!"
-        fi
 
     - name: Create ${{ matrix.project }} Windows release package
-      if: steps.check.outputs.should_build == 'true'
       shell: msys2 {0}
       run: |
+        echo "📦 Creating release package for ${{ matrix.project }}..."
         ./create_release.sh ${{ matrix.project }}
 
-    - name: List files before upload (Windows)
-      if: steps.check.outputs.should_build == 'true'
-      shell: msys2 {0}
-      run: |
-        echo "Current directory files:"
-        ls -la
-        echo "Looking for pattern: ${{ matrix.project }}_windows_*.zip"
-        ls -la ${{ matrix.project }}_windows_*.zip 2>/dev/null || echo "No files found matching pattern"
-
     - name: Upload ${{ matrix.project }} Windows artifact
-      if: steps.check.outputs.should_build == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.project }}-windows
         path: ${{ matrix.project }}_windows_*.zip
-        if-no-files-found: warn
+        if-no-files-found: error
 
   build-linux:
-    needs: detect-changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
         project: [type_tag, slime_survivor, tictactoe]
     steps:
-    - name: Check if ${{ matrix.project }} needs building
-      id: check
-      run: |
-        # Map project names to output variables
-        case "${{ matrix.project }}" in
-          "type_tag")
-            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_type_tag }}"
-            ;;
-          "slime_survivor")
-            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_slime_survivor }}"
-            ;;
-          "tictactoe")
-            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_tictactoe }}"
-            ;;
-        esac
-
-        if [[ "$SHOULD_BUILD" == "true" ]]; then
-          echo "should_build=true" >> $GITHUB_OUTPUT
-          echo "🎯 ${{ matrix.project }} 有变更，需要构建"
-        else
-          echo "should_build=false" >> $GITHUB_OUTPUT
-          echo "⏭️ ${{ matrix.project }} 无变更，跳过构建"
-        fi
-      shell: bash
-
     - name: Checkout code
-      if: steps.check.outputs.should_build == 'true'
       uses: actions/checkout@v4
 
     - name: Install SDL2 dependencies
-      if: steps.check.outputs.should_build == 'true'
       run: |
         sudo apt-get update
         sudo apt-get install -y \
@@ -291,42 +105,24 @@ jobs:
           g++
 
     - name: Build ${{ matrix.project }} for Linux
-      if: steps.check.outputs.should_build == 'true'
       run: |
-        echo "Starting build for ${{ matrix.project }} on Linux"
-        pwd
-        ls -la
+        echo "🔨 Building ${{ matrix.project }} for Linux..."
         ./build_cross_platform.sh ${{ matrix.project }}
-        echo "Build completed, checking for executable..."
-        if [[ "${{ matrix.project }}" == "slime_survivor" ]]; then
-          ls -la ${{ matrix.project }}/src/${{ matrix.project }}_linux 2>/dev/null || echo "Executable not found!"
-        else
-          ls -la ${{ matrix.project }}/${{ matrix.project }}_linux 2>/dev/null || echo "Executable not found!"
-        fi
 
     - name: Create ${{ matrix.project }} Linux release package
-      if: steps.check.outputs.should_build == 'true'
       run: |
+        echo "📦 Creating release package for ${{ matrix.project }}..."
         ./create_release.sh ${{ matrix.project }}
 
-    - name: List files before upload (Linux)
-      if: steps.check.outputs.should_build == 'true'
-      run: |
-        echo "Current directory files:"
-        ls -la
-        echo "Looking for pattern: ${{ matrix.project }}_linux_*.tar.gz"
-        ls -la ${{ matrix.project }}_linux_*.tar.gz 2>/dev/null || echo "No files found matching pattern"
-
     - name: Upload ${{ matrix.project }} Linux artifact
-      if: steps.check.outputs.should_build == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.project }}-linux
         path: ${{ matrix.project }}_linux_*.tar.gz
-        if-no-files-found: warn
+        if-no-files-found: error
 
   release:
-    needs: [detect-changes, build-macos, build-windows, build-linux]
+    needs: [build-macos, build-windows, build-linux]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
     steps:
