@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        project: [type_tag, slime_survivor, tictactoe]
+        project: [type_tag]
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        project: [type_tag, slime_survivor, tictactoe]
+        project: [type_tag]
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        project: [type_tag, slime_survivor, tictactoe]
+        project: [type_tag]
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -136,12 +136,6 @@ jobs:
           type_tag-macos/*.tar.gz
           type_tag-windows/*.zip
           type_tag-linux/*.tar.gz
-          slime_survivor-macos/*.tar.gz
-          slime_survivor-windows/*.zip
-          slime_survivor-linux/*.tar.gz
-          tictactoe-macos/*.tar.gz
-          tictactoe-windows/*.zip
-          tictactoe-linux/*.tar.gz
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
