@@ -82,7 +82,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.project }}-windows
-        path: ${{ matrix.project }}_windows_*.zip
+        path: ${{ matrix.project }}_windows_*.tar.gz
         if-no-files-found: error
 
   build-linux:
@@ -136,7 +136,7 @@ jobs:
       with:
         files: |
           type_tag-macos/*.tar.gz
-          type_tag-windows/*.zip
+          type_tag-windows/*.tar.gz
           type_tag-linux/*.tar.gz
         generate_release_notes: true
       env:

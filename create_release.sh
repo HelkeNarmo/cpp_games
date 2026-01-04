@@ -186,9 +186,10 @@ create_release_package() {
 
             echo "📦 创建 Windows 发布包..."
             cd "$release_dir"
-            zip -r "../${project}_windows_${timestamp}.zip" *
+            # 在MSYS2环境中使用tar替代zip
+            tar -czf "../${project}_windows_${timestamp}.tar.gz" *
             cd ..
-            echo "✅ Windows 发布包创建完成: ${project}_windows_${timestamp}.zip"
+            echo "✅ Windows 发布包创建完成: ${project}_windows_${timestamp}.tar.gz"
             ;;
 
         "type_tag-linux")
@@ -233,9 +234,10 @@ create_release_package() {
 
             echo "📦 创建 Windows 发布包..."
             cd "$release_dir"
-            zip -r "../${project}_windows_${timestamp}.zip" *
+            # 在MSYS2环境中使用tar替代zip
+            tar -czf "../${project}_windows_${timestamp}.tar.gz" *
             cd ..
-            echo "✅ Windows 发布包创建完成: ${project}_windows_${timestamp}.zip"
+            echo "✅ Windows 发布包创建完成: ${project}_windows_${timestamp}.tar.gz"
             ;;
 
         "slime_survivor-linux")
@@ -276,9 +278,10 @@ create_release_package() {
 
             echo "📦 创建 Windows 发布包..."
             cd "$release_dir"
-            zip -r "../${project}_windows_${timestamp}.zip" *
+            # 在MSYS2环境中使用tar替代zip
+            tar -czf "../${project}_windows_${timestamp}.tar.gz" *
             cd ..
-            echo "✅ Windows 发布包创建完成: ${project}_windows_${timestamp}.zip"
+            echo "✅ Windows 发布包创建完成: ${project}_windows_${timestamp}.tar.gz"
             ;;
 
         "tictactoe-linux")
