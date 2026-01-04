@@ -15,14 +15,26 @@ detect_platform() {
         darwin*)
             echo "macos"
             ;;
-        msys*|win32*)
+        msys*|win32*|cygwin*)
             echo "windows"
             ;;
         linux*)
             echo "linux"
             ;;
         *)
-            echo "unknown"
+            # 检查MSYSTEM环境变量 (MSYS2)
+            if [[ -n "$MSYSTEM" ]]; then
+                case "$MSYSTEM" in
+                    MINGW*|MSYS*)
+                        echo "windows"
+                        ;;
+                    *)
+                        echo "unknown"
+                        ;;
+                esac
+            else
+                echo "unknown"
+            fi
             ;;
     esac
 }

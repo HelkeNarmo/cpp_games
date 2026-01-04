@@ -68,6 +68,8 @@ jobs:
       shell: msys2 {0}
       run: |
         echo "🔨 Building ${{ matrix.project }} for Windows..."
+        echo "OSTYPE: $OSTYPE"
+        echo "MSYSTEM: $MSYSTEM"
         ./build_cross_platform.sh ${{ matrix.project }}
 
     - name: Create ${{ matrix.project }} Windows release package
