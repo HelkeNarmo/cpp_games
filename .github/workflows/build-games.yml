@@ -129,12 +129,21 @@ jobs:
       run: |
         ./create_release.sh ${{ matrix.project }}
 
+    - name: List files before upload (macOS)
+      if: steps.check.outputs.should_build == 'true'
+      run: |
+        echo "Current directory files:"
+        ls -la
+        echo "Looking for pattern: ${{ matrix.project }}_macos_*.tar.gz"
+        ls -la ${{ matrix.project }}_macos_*.tar.gz 2>/dev/null || echo "No files found matching pattern"
+
     - name: Upload ${{ matrix.project }} macOS artifact
       if: steps.check.outputs.should_build == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.project }}-macos
         path: ${{ matrix.project }}_macos_*.tar.gz
+        if-no-files-found: warn
 
   build-windows:
     needs: detect-changes
@@ -201,12 +210,22 @@ jobs:
       run: |
         ./create_release.sh ${{ matrix.project }}
 
+    - name: List files before upload (Windows)
+      if: steps.check.outputs.should_build == 'true'
+      shell: msys2 {0}
+      run: |
+        echo "Current directory files:"
+        ls -la
+        echo "Looking for pattern: ${{ matrix.project }}_windows_*.zip"
+        ls -la ${{ matrix.project }}_windows_*.zip 2>/dev/null || echo "No files found matching pattern"
+
     - name: Upload ${{ matrix.project }} Windows artifact
       if: steps.check.outputs.should_build == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.project }}-windows
         path: ${{ matrix.project }}_windows_*.zip
+        if-no-files-found: warn
 
   build-linux:
     needs: detect-changes
@@ -267,12 +286,21 @@ jobs:
       run: |
         ./create_release.sh ${{ matrix.project }}
 
+    - name: List files before upload (Linux)
+      if: steps.check.outputs.should_build == 'true'
+      run: |
+        echo "Current directory files:"
+        ls -la
+        echo "Looking for pattern: ${{ matrix.project }}_linux_*.tar.gz"
+        ls -la ${{ matrix.project }}_linux_*.tar.gz 2>/dev/null || echo "No files found matching pattern"
+
     - name: Upload ${{ matrix.project }} Linux artifact
       if: steps.check.outputs.should_build == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.project }}-linux
         path: ${{ matrix.project }}_linux_*.tar.gz
+        if-no-files-found: warn
 
   release:
     needs: [detect-changes, build-macos, build-windows, build-linux]
