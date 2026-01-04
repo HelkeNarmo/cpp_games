@@ -1,0 +1,230 @@
+name: Build Games
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - '**/*.cpp'
+      - '**/*.h'
+      - '**/*.hpp'
+      - '**/img/**'
+      - '**/font/**'
+      - '**/aud/**'
+      - '.github/workflows/build-games.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - '**/*.cpp'
+      - '**/*.h'
+      - '**/*.hpp'
+      - '**/img/**'
+      - '**/font/**'
+      - '**/aud/**'
+      - '.github/workflows/build-games.yml'
+  workflow_dispatch:
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      type_tag: ${{ steps.filter.outputs.type_tag }}
+      slime_survivor: ${{ steps.filter.outputs.slime_survivor }}
+      tictactoe: ${{ steps.filter.outputs.tictactoe }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
+
+    - name: Check for file changes
+      id: filter
+      run: |
+        # 检查哪些项目有文件变更
+        echo "检查文件变更..."
+
+        # 获取变更的文件列表
+        if [[ "${{ github.event_name }}" == "push" ]]; then
+          CHANGED_FILES=$(git diff --name-only HEAD~1)
+        elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }})
+        else
+          # workflow_dispatch - 检查所有项目
+          CHANGED_FILES="type_tag/ slime_survivor/ tictactoe/"
+        fi
+
+        echo "变更的文件:"
+        echo "$CHANGED_FILES"
+
+        # 检查每个项目是否有变更
+        check_project() {
+          local project=$1
+          if echo "$CHANGED_FILES" | grep -q "^$project/"; then
+            echo "true"
+          else
+            echo "false"
+          fi
+        }
+
+        echo "type_tag=$(check_project type_tag)" >> $GITHUB_OUTPUT
+        echo "slime_survivor=$(check_project slime_survivor)" >> $GITHUB_OUTPUT
+        echo "tictactoe=$(check_project tictactoe)" >> $GITHUB_OUTPUT
+
+        echo "检测结果:"
+        echo "  type_tag: $(check_project type_tag)"
+        echo "  slime_survivor: $(check_project slime_survivor)"
+        echo "  tictactoe: $(check_project tictactoe)"
+
+  build-macos:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.type_tag == 'true' || needs.detect-changes.outputs.slime_survivor == 'true' || needs.detect-changes.outputs.tictactoe == 'true'
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        project: [type_tag, slime_survivor, tictactoe]
+        exclude:
+          - project: type_tag
+            exclude: ${{ needs.detect-changes.outputs.type_tag != 'true' }}
+          - project: slime_survivor
+            exclude: ${{ needs.detect-changes.outputs.slime_survivor != 'true' }}
+          - project: tictactoe
+            exclude: ${{ needs.detect-changes.outputs.tictactoe != 'true' }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install SDL2 dependencies
+      run: |
+        brew update
+        brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer sdl2_net pkg-config
+
+    - name: Build ${{ matrix.project }} for macOS
+      run: |
+        ./build_cross_platform.sh ${{ matrix.project }}
+
+    - name: Create ${{ matrix.project }} macOS release package
+      run: |
+        ./create_release.sh ${{ matrix.project }}
+
+    - name: Upload ${{ matrix.project }} macOS artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.project }}-macos
+        path: ${{ matrix.project }}_macos_*.tar.gz
+
+  build-windows:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.type_tag == 'true' || needs.detect-changes.outputs.slime_survivor == 'true' || needs.detect-changes.outputs.tictactoe == 'true'
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        project: [type_tag, slime_survivor, tictactoe]
+        exclude:
+          - project: type_tag
+            exclude: ${{ needs.detect-changes.outputs.type_tag != 'true' }}
+          - project: slime_survivor
+            exclude: ${{ needs.detect-changes.outputs.slime_survivor != 'true' }}
+          - project: tictactoe
+            exclude: ${{ needs.detect-changes.outputs.tictactoe != 'true' }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-make
+          mingw-w64-x86_64-SDL2
+          mingw-w64-x86_64-SDL2_image
+          mingw-w64-x86_64-SDL2_ttf
+          mingw-w64-x86_64-SDL2_mixer
+          mingw-w64-x86_64-SDL2_net
+          mingw-w64-x86_64-pkg-config
+
+    - name: Build ${{ matrix.project }} for Windows
+      shell: msys2 {0}
+      run: |
+        ./build_cross_platform.sh ${{ matrix.project }}
+
+    - name: Create ${{ matrix.project }} Windows release package
+      shell: msys2 {0}
+      run: |
+        ./create_release.sh ${{ matrix.project }}
+
+    - name: Upload ${{ matrix.project }} Windows artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.project }}-windows
+        path: ${{ matrix.project }}_windows_*.zip
+
+  build-linux:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.type_tag == 'true' || needs.detect-changes.outputs.slime_survivor == 'true' || needs.detect-changes.outputs.tictactoe == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [type_tag, slime_survivor, tictactoe]
+        exclude:
+          - project: type_tag
+            exclude: ${{ needs.detect-changes.outputs.type_tag != 'true' }}
+          - project: slime_survivor
+            exclude: ${{ needs.detect-changes.outputs.slime_survivor != 'true' }}
+          - project: tictactoe
+            exclude: ${{ needs.detect-changes.outputs.tictactoe != 'true' }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install SDL2 dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libsdl2-dev \
+          libsdl2-image-dev \
+          libsdl2-ttf-dev \
+          libsdl2-mixer-dev \
+          libsdl2-net-dev \
+          pkg-config \
+          g++
+
+    - name: Build ${{ matrix.project }} for Linux
+      run: |
+        ./build_cross_platform.sh ${{ matrix.project }}
+
+    - name: Create ${{ matrix.project }} Linux release package
+      run: |
+        ./create_release.sh ${{ matrix.project }}
+
+    - name: Upload ${{ matrix.project }} Linux artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.project }}-linux
+        path: ${{ matrix.project }}_linux_*.tar.gz
+
+  release:
+    needs: [detect-changes, build-macos, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          type_tag-macos/*.tar.gz
+          type_tag-windows/*.zip
+          type_tag-linux/*.tar.gz
+          slime_survivor-macos/*.tar.gz
+          slime_survivor-windows/*.zip
+          slime_survivor-linux/*.tar.gz
+          tictactoe-macos/*.tar.gz
+          tictactoe-windows/*.zip
+          tictactoe-linux/*.tar.gz
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

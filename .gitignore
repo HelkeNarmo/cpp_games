@@ -1,0 +1,61 @@
+# 构建产物
+*.o
+*.obj
+*.exe
+*.dll
+*.dylib
+*.so
+main
+main_debug
+*_macos
+*_linux
+*_windows
+
+# macOS
+.DS_Store
+*.dSYM/
+Contents/
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Linux
+*.swp
+*.swo
+*~
+
+# IDE 和编辑器
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# 临时文件
+*.tmp
+*.log
+*.cache
+
+# 发布包和构建目录
+*.tar.gz
+*.zip
+*.7z
+release/
+build/
+dist/
+out/
+
+# 编译命令和配置（如果不需要分享）
+compile_commands.json
+
+# 游戏配置文件（如果包含敏感信息）
+# config.cfg
+
+# 音频文件（如果太大可以忽略，但这里保留）
+# *.mp3
+# *.wav
+
+# 个人笔记和文档
+AGENT.md
+*.md.bak

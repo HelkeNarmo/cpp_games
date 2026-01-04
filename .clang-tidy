@@ -1,0 +1,21 @@
+---
+Checks: >
+  -*,
+  clang-diagnostic-*,
+  -clang-analyzer-*,
+  -modernize-*,
+  -cppcoreguidelines-*,
+  -hicpp-*,
+  -llvm-*,
+  -misc-*,
+  -performance-*,
+  -readability-*,
+  -bugprone-*,
+  -cert-*,
+  -google-*,
+  -portability-*
+
+WarningsAsErrors: ""
+HeaderFilterRegex: ""
+AnalyzeTemporaryDtors: false
+FormatStyle: none
