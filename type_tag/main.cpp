@@ -18,6 +18,10 @@
 #include <sstream>
 #include <SDL2/SDL_ttf.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 enum class Stage { MENU, SERVER_LIST, WAITING, READY, RACING };
 
 static const string PATH_BG = "./img/map.png";
@@ -239,7 +243,12 @@ void connectServer() {
     client.startProgressLoop();
 }
 
-int main() {
+#ifdef _WIN32
+#define SDL_MAIN_HANDLED
+#endif
+
+int main(int argc, char* argv[]) {
+    (void)argc; (void)argv;  // Avoid unused parameter warnings
     using namespace std::chrono;
     if (!init()) {
         return 1;
