@@ -112,7 +112,7 @@ build_type_tag_windows() {
 
     echo "🪟 编译 Type Tag (Windows)..."
     x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
-        -static-libgcc -static-libstdc++ \
+        -static-libgcc -static-libstdc++ -static-libwinpthread \
         $(pkg-config --cflags --libs sdl2 SDL2_image SDL2_ttf SDL2_mixer SDL2_net 2>/dev/null || echo "-I/usr/x86_64-w64-mingw32/include -L/usr/x86_64-w64-mingw32/lib") \
         -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lSDL2_net \
         -lws2_32 \
@@ -188,7 +188,7 @@ build_slime_survivor_windows() {
 
     echo "🪟 编译 Slime Survivor (Windows)..."
     x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
-        -static-libgcc -static-libstdc++ \
+        -static-libgcc -static-libstdc++ -static-libwinpthread \
         $(pkg-config --cflags --libs sdl2 SDL2_image SDL2_ttf SDL2_mixer 2>/dev/null || echo "-I/usr/x86_64-w64-mingw32/include -L/usr/x86_64-w64-mingw32/lib") \
         -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer \
         -lws2_32 \
@@ -264,7 +264,7 @@ build_tictactoe_windows() {
 
     echo "🪟 编译 Tic Tac Toe (Windows)..."
     x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
-        -static-libgcc -static-libstdc++ \
+        -static-libgcc -static-libstdc++ -static-libwinpthread \
         $(pkg-config --cflags --libs sdl2 SDL2_gfx 2>/dev/null || echo "-I/usr/x86_64-w64-mingw32/include -L/usr/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_gfx") \
         -lws2_32 \
         -mwindows \
