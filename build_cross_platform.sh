@@ -114,25 +114,25 @@ build_type_tag_windows() {
     # MSYS2环境中SDL2通常是静态库，尝试静态链接
     if pkg-config --exists sdl2 SDL2_image SDL2_ttf SDL2_mixer SDL2_net 2>/dev/null; then
         echo "使用 pkg-config 配置 SDL2 库..."
-        SDL_FLAGS="$(pkg-config --cflags --libs sdl2 SDL2_image SDL2_ttf SDL2_mixer SDL2_net)"
+        # 尝试获取静态库版本
+        if pkg-config --exists --static sdl2 SDL2_image SDL2_ttf SDL2_mixer SDL2_net 2>/dev/null; then
+            echo "找到静态库配置..."
+            SDL_FLAGS="$(pkg-config --cflags --libs --static sdl2 SDL2_image SDL2_ttf SDL2_mixer SDL2_net)"
+            USE_STATIC=true
+        else
+            echo "使用动态库配置..."
+            SDL_FLAGS="$(pkg-config --cflags --libs sdl2 SDL2_image SDL2_ttf SDL2_mixer SDL2_net)"
+            USE_STATIC=false
+        fi
     else
         echo "pkg-config 不可用，使用手动配置..."
         SDL_FLAGS="-I/usr/x86_64-w64-mingw32/include -I/mingw64/include -L/usr/x86_64-w64-mingw32/lib -L/mingw64/lib"
+        USE_STATIC=false
     fi
 
-    # 尝试静态链接SDL2库，如果失败则使用动态链接
-    echo "尝试静态链接SDL2库..."
-    if x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
-        -static-libgcc -static-libstdc++ \
-        $SDL_FLAGS \
-        -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lSDL2_net \
-        -lws2_32 -lwinmm -lole32 -luuid -lsetupapi -limm32 -lversion \
-        -static \
-        -mwindows \
-        -o type_tag.exe 2>/dev/null; then
-        echo "✅ 静态链接成功"
-    else
-        echo "⚠️  静态链接失败，尝试动态链接..."
+    # 根据库类型选择编译策略
+    if [[ "$USE_STATIC" == true ]]; then
+        echo "🔗 使用静态SDL2库编译..."
         x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
             -static-libgcc -static-libstdc++ \
             $SDL_FLAGS \
@@ -140,7 +140,17 @@ build_type_tag_windows() {
             -lws2_32 -lwinmm -lole32 -luuid -lsetupapi -limm32 -lversion \
             -mwindows \
             -o type_tag.exe
-        echo "✅ 动态链接完成"
+        echo "✅ 静态SDL2库编译完成"
+    else
+        echo "🔗 使用动态SDL2库编译..."
+        x86_64-w64-mingw32-g++ *.cpp -std=c++17 -O2 \
+            -static-libgcc -static-libstdc++ \
+            $SDL_FLAGS \
+            -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lSDL2_net \
+            -lws2_32 -lwinmm -lole32 -luuid -lsetupapi -limm32 -lversion \
+            -mwindows \
+            -o type_tag.exe
+        echo "✅ 动态SDL2库编译完成 (需要DLL文件)"
     fi
 
     echo "Windows 可执行文件已生成: type_tag/type_tag.exe"
