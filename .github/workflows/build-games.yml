@@ -122,7 +122,12 @@ jobs:
     - name: Build ${{ matrix.project }} for macOS
       if: steps.check.outputs.should_build == 'true'
       run: |
+        echo "Starting build for ${{ matrix.project }} on macOS"
+        pwd
+        ls -la
         ./build_cross_platform.sh ${{ matrix.project }}
+        echo "Build completed, checking for executable..."
+        ls -la ${{ matrix.project }}/${{ matrix.project }}_macos 2>/dev/null || echo "Executable not found!"
 
     - name: Create ${{ matrix.project }} macOS release package
       if: steps.check.outputs.should_build == 'true'
@@ -202,7 +207,16 @@ jobs:
       if: steps.check.outputs.should_build == 'true'
       shell: msys2 {0}
       run: |
+        echo "Starting build for ${{ matrix.project }} on Windows"
+        pwd
+        ls -la
         ./build_cross_platform.sh ${{ matrix.project }}
+        echo "Build completed, checking for executable..."
+        if [[ "${{ matrix.project }}" == "slime_survivor" ]]; then
+          ls -la ${{ matrix.project }}/src/${{ matrix.project }}.exe 2>/dev/null || echo "Executable not found!"
+        else
+          ls -la ${{ matrix.project }}/${{ matrix.project }}.exe 2>/dev/null || echo "Executable not found!"
+        fi
 
     - name: Create ${{ matrix.project }} Windows release package
       if: steps.check.outputs.should_build == 'true'
@@ -279,7 +293,16 @@ jobs:
     - name: Build ${{ matrix.project }} for Linux
       if: steps.check.outputs.should_build == 'true'
       run: |
+        echo "Starting build for ${{ matrix.project }} on Linux"
+        pwd
+        ls -la
         ./build_cross_platform.sh ${{ matrix.project }}
+        echo "Build completed, checking for executable..."
+        if [[ "${{ matrix.project }}" == "slime_survivor" ]]; then
+          ls -la ${{ matrix.project }}/src/${{ matrix.project }}_linux 2>/dev/null || echo "Executable not found!"
+        else
+          ls -la ${{ matrix.project }}/${{ matrix.project }}_linux 2>/dev/null || echo "Executable not found!"
+        fi
 
     - name: Create ${{ matrix.project }} Linux release package
       if: steps.check.outputs.should_build == 'true'
