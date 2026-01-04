@@ -27,9 +27,9 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      type_tag: ${{ steps.filter.outputs.type_tag }}
-      slime_survivor: ${{ steps.filter.outputs.slime_survivor }}
-      tictactoe: ${{ steps.filter.outputs.tictactoe }}
+      build_type_tag: ${{ steps.filter.outputs.build_type_tag }}
+      build_slime_survivor: ${{ steps.filter.outputs.build_slime_survivor }}
+      build_tictactoe: ${{ steps.filter.outputs.build_tictactoe }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -72,9 +72,9 @@ jobs:
           fi
         }
 
-        echo "type_tag=$(check_project type_tag)" >> $GITHUB_OUTPUT
-        echo "slime_survivor=$(check_project slime_survivor)" >> $GITHUB_OUTPUT
-        echo "tictactoe=$(check_project tictactoe)" >> $GITHUB_OUTPUT
+        echo "build_type_tag=$(check_project type_tag)" >> $GITHUB_OUTPUT
+        echo "build_slime_survivor=$(check_project slime_survivor)" >> $GITHUB_OUTPUT
+        echo "build_tictactoe=$(check_project tictactoe)" >> $GITHUB_OUTPUT
 
         echo "检测结果:"
         echo "  type_tag: $(check_project type_tag)"
@@ -91,13 +91,27 @@ jobs:
     - name: Check if ${{ matrix.project }} needs building
       id: check
       run: |
-        if [[ "${{ needs.detect-changes.outputs[matrix.project] }}" == "true" ]]; then
+        # Map project names to output variables
+        case "${{ matrix.project }}" in
+          "type_tag")
+            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_type_tag }}"
+            ;;
+          "slime_survivor")
+            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_slime_survivor }}"
+            ;;
+          "tictactoe")
+            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_tictactoe }}"
+            ;;
+        esac
+
+        if [[ "$SHOULD_BUILD" == "true" ]]; then
           echo "should_build=true" >> $GITHUB_OUTPUT
           echo "🎯 ${{ matrix.project }} 有变更，需要构建"
         else
           echo "should_build=false" >> $GITHUB_OUTPUT
           echo "⏭️ ${{ matrix.project }} 无变更，跳过构建"
         fi
+      shell: bash
 
     - name: Install SDL2 dependencies
       if: steps.check.outputs.should_build == 'true'
@@ -132,13 +146,27 @@ jobs:
     - name: Check if ${{ matrix.project }} needs building
       id: check
       run: |
-        if [[ "${{ needs.detect-changes.outputs[matrix.project] }}" == "true" ]]; then
+        # Map project names to output variables
+        case "${{ matrix.project }}" in
+          "type_tag")
+            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_type_tag }}"
+            ;;
+          "slime_survivor")
+            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_slime_survivor }}"
+            ;;
+          "tictactoe")
+            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_tictactoe }}"
+            ;;
+        esac
+
+        if [[ "$SHOULD_BUILD" == "true" ]]; then
           echo "should_build=true" >> $GITHUB_OUTPUT
           echo "🎯 ${{ matrix.project }} 有变更，需要构建"
         else
           echo "should_build=false" >> $GITHUB_OUTPUT
           echo "⏭️ ${{ matrix.project }} 无变更，跳过构建"
         fi
+      shell: bash
 
     - name: Checkout code
       if: steps.check.outputs.should_build == 'true'
@@ -190,13 +218,27 @@ jobs:
     - name: Check if ${{ matrix.project }} needs building
       id: check
       run: |
-        if [[ "${{ needs.detect-changes.outputs[matrix.project] }}" == "true" ]]; then
+        # Map project names to output variables
+        case "${{ matrix.project }}" in
+          "type_tag")
+            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_type_tag }}"
+            ;;
+          "slime_survivor")
+            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_slime_survivor }}"
+            ;;
+          "tictactoe")
+            SHOULD_BUILD="${{ needs.detect-changes.outputs.build_tictactoe }}"
+            ;;
+        esac
+
+        if [[ "$SHOULD_BUILD" == "true" ]]; then
           echo "should_build=true" >> $GITHUB_OUTPUT
           echo "🎯 ${{ matrix.project }} 有变更，需要构建"
         else
           echo "should_build=false" >> $GITHUB_OUTPUT
           echo "⏭️ ${{ matrix.project }} 无变更，跳过构建"
         fi
+      shell: bash
 
     - name: Checkout code
       if: steps.check.outputs.should_build == 'true'
